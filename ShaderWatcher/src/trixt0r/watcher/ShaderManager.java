@@ -137,7 +137,6 @@ public class ShaderManager implements Disposable{
 			newShader.end();
 			
 			//Change gl handles
-			System.out.println("Before\n"+shader.getFragmentShaderSource());
 			vertexField.set(shader, (Integer) vertexField.get(newShader));
 			fragmentField.set(shader, (Integer) fragmentField.get(newShader));
 			programField.set(shader, (Integer) programField.get(newShader));
@@ -145,7 +144,6 @@ public class ShaderManager implements Disposable{
 			fragSourceField.set(shader, (String) fragSourceField.get(newShader));
 			uniformNamesField.set(shader, (String[]) uniformNamesField.get(newShader));
 			attributeNamesField.set(shader, (String[]) attributeNamesField.get(newShader));
-			System.out.println("After "+shader.getFragmentShaderSource());
 			
 			this.copyFromTo((ObjectIntMap<String>) uniformsField.get(shader),
 					(ObjectIntMap<String>) uniformsField.get(newShader));
