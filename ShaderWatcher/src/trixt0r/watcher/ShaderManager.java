@@ -1,6 +1,7 @@
 package trixt0r.watcher;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.AbstractMap.SimpleEntry;
@@ -8,7 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
+
+import static com.badlogic.gdx.graphics.GL20.*;
+
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.ArrayMap;
 import com.badlogic.gdx.utils.BufferUtils;
@@ -55,6 +58,9 @@ public class ShaderManager implements Disposable{
 			Field fragmentField = shader.getClass().getDeclaredField("fragmentShaderHandle");
 			Field programField = shader.getClass().getDeclaredField("program");
 			
+			Field vertSourceField = shader.getClass().getDeclaredField("vertexShaderSource");
+			Field fragSourceField = shader.getClass().getDeclaredField("fragmentShaderSource");
+			
 			Field uniformsField = shader.getClass().getDeclaredField("uniforms");
 			Field uniformTypesField = shader.getClass().getDeclaredField("uniformTypes");
 			Field uniformSizesField = shader.getClass().getDeclaredField("uniformSizes");
@@ -69,6 +75,9 @@ public class ShaderManager implements Disposable{
 			fragmentField.setAccessible(true);
 			programField.setAccessible(true);
 			
+			vertSourceField.setAccessible(true);
+			fragSourceField.setAccessible(true);
+			
 			uniformsField.setAccessible(true);
 			uniformTypesField.setAccessible(true);
 			uniformSizesField.setAccessible(true);
@@ -82,13 +91,12 @@ public class ShaderManager implements Disposable{
 			Integer programHandle = (Integer) programField.get(shader);
 			
 			shader.begin();
-			IntBuffer params = BufferUtils.newIntBuffer(1);//IntBuffer.allocate(1);
-			Gdx.gl20.glGetProgramiv(programHandle, GL20.GL_ACTIVE_UNIFORMS, params);
+			IntBuffer params = BufferUtils.newIntBuffer(1);
+			Gdx.gl20.glGetProgramiv(programHandle, GL_ACTIVE_UNIFORMS, params);
 			ArrayList<ShaderInfo> infos = new ArrayList<ShaderInfo>();
 			for(int i = 0; i< params.get(0); i++){
 				IntBuffer size = BufferUtils.newIntBuffer(1);
 				IntBuffer type = BufferUtils.newIntBuffer(1);
-				//IntBuffer texId = BufferUtils.newIntBuffer(1);
 				ShaderInfo info = new ShaderInfo();
 				Gdx.gl20.glGetActiveUniform(programHandle, i, size, type);
 				info.type = type.get(0);
@@ -103,8 +111,8 @@ public class ShaderManager implements Disposable{
 			int[] texIds = new int[32];
 			IntBuffer p = BufferUtils.newIntBuffer(16);
 			for(int i = 0; i < texIds.length; i++){
-				Gdx.gl20.glActiveTexture(GL20.GL_TEXTURE0+i);
-				Gdx.gl20.glGetIntegerv(GL20.GL_TEXTURE_BINDING_2D, p);
+				Gdx.gl20.glActiveTexture(GL_TEXTURE0+i);
+				Gdx.gl20.glGetIntegerv(GL_TEXTURE_BINDING_2D, p);
 				texIds[i] = p.get(0);
 			}
 			shader.end();
@@ -116,20 +124,28 @@ public class ShaderManager implements Disposable{
 			
 			 //Pass old values to shader
 			newShader.begin();
-			for(int i = 0; i < infos.size(); i++)
-				ShaderUtils.setUniformf(i, infos.get(i).type, infos.get(i).floats);
-			for(int i = 0; i < texIds.length; i++){
-				Gdx.gl20.glActiveTexture(GL20.GL_TEXTURE0+i);
-				Gdx.gl20.glBindTexture(GL20.GL_TEXTURE_2D, texIds[i]);
+			int texIndex = 0;
+			for(int i = 0; i < infos.size(); i++){
+				if(infos.get(i).type == GL_SAMPLER_2D){
+					Gdx.gl20.glActiveTexture(GL_TEXTURE0+texIndex);
+					Gdx.gl20.glEnable(GL_TEXTURE_2D);
+					Gdx.gl20.glBindTexture(GL_TEXTURE_2D, texIds[i]);
+					Gdx.gl20.glUniform1i(i, texIndex++);
+				}
+				else ShaderUtils.setUniformf(i, infos.get(i).type, infos.get(i).floats);
 			}
 			newShader.end();
 			
 			//Change gl handles
+			System.out.println("Before\n"+shader.getFragmentShaderSource());
 			vertexField.set(shader, (Integer) vertexField.get(newShader));
 			fragmentField.set(shader, (Integer) fragmentField.get(newShader));
 			programField.set(shader, (Integer) programField.get(newShader));
+			vertSourceField.set(shader, (String) vertSourceField.get(newShader));
+			fragSourceField.set(shader, (String) fragSourceField.get(newShader));
 			uniformNamesField.set(shader, (String[]) uniformNamesField.get(newShader));
 			attributeNamesField.set(shader, (String[]) attributeNamesField.get(newShader));
+			System.out.println("After "+shader.getFragmentShaderSource());
 			
 			this.copyFromTo((ObjectIntMap<String>) uniformsField.get(shader),
 					(ObjectIntMap<String>) uniformsField.get(newShader));
@@ -148,6 +164,9 @@ public class ShaderManager implements Disposable{
 			vertexField.setAccessible(false);
 			fragmentField.setAccessible(false);
 			programField.setAccessible(false);
+			
+			vertSourceField.setAccessible(false);
+			fragSourceField.setAccessible(false);
 			
 			uniformsField.setAccessible(false);
 			uniformTypesField.setAccessible(false);

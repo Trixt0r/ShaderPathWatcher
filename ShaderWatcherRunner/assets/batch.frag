@@ -6,21 +6,21 @@ precision mediump float;
 #endif 
 varying LOWP vec4 v_color;
 varying vec2 v_texCoords;
-uniform sampler2D u_texture;
 uniform float time;
+uniform sampler2D u_texture;
 
 //Standard
-/*void main()
+void main()
 {
 	gl_FragColor = v_color * texture2D(u_texture, v_texCoords);
-}*/
+}
 //Waves
-void main()
+/*void main()
 {
 	vec2 t = vec2(v_texCoords.x+cos(v_texCoords.y+time*0.1)*.15,
 					v_texCoords.y+sin(v_texCoords.x+time*0.1)*0.25);
 	gl_FragColor = v_color * texture2D(u_texture, t); 
-}
+}*/
 //Shockwaves
 /*const float xA = 5.5, xB = 4.0;
 const float xfsin = 0.5, xfcos = 0.5;
