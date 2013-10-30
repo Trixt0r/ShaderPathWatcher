@@ -129,7 +129,7 @@ public class ShaderManager implements Disposable{
 				if(infos.get(i).type == GL_SAMPLER_2D){
 					Gdx.gl20.glActiveTexture(GL_TEXTURE0+texIndex);
 					Gdx.gl20.glEnable(GL_TEXTURE_2D);
-					Gdx.gl20.glBindTexture(GL_TEXTURE_2D, texIds[i]);
+					Gdx.gl20.glBindTexture(GL_TEXTURE_2D, texIds[texIndex]);
 					Gdx.gl20.glUniform1i(i, texIndex++);
 				}
 				else ShaderUtils.setUniformf(i, infos.get(i).type, infos.get(i).floats);
