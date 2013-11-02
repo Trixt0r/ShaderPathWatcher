@@ -45,9 +45,7 @@ public class ShaderWatcherTest implements ApplicationListener{
 	public void render() {
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		Gdx.gl.glClearColor(1, 1, 1, 1);
-		Gdx.gl20.glActiveTexture(GL20.GL_TEXTURE0);
-		if(this.s.hasAttribute("time")){
-		}
+		
 		this.s.begin();
 		this.s.setUniformf("time", time);
 		this.s.end();
