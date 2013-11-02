@@ -1,7 +1,6 @@
 package trixt0r.watcher;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.AbstractMap.SimpleEntry;
@@ -12,6 +11,10 @@ import com.badlogic.gdx.Gdx;
 
 import static com.badlogic.gdx.graphics.GL20.*;
 
+import com.badlogic.gdx.assets.loaders.FileHandleResolver;
+import com.badlogic.gdx.assets.loaders.resolvers.ExternalFileHandleResolver;
+import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.ArrayMap;
 import com.badlogic.gdx.utils.BufferUtils;
@@ -22,6 +25,7 @@ public class ShaderManager implements Disposable{
 	
 	private ArrayMap<SimpleEntry<String, String>, ShaderProgram> shaders;
 	private ArrayMap<SimpleEntry<String, String>, ShaderProgram> toReload;
+	public FileHandleResolver resolver = absoluteResolver;
 	
 	public ShaderManager(){
 		this.shaders = new ArrayMap<SimpleEntry<String, String>, ShaderProgram>();
@@ -49,7 +53,7 @@ public class ShaderManager implements Disposable{
 	private void reloadShader(SimpleEntry<String, String> e){
 		try {
 			ShaderProgram shader = this.shaders.get(e);
-			ShaderProgram newShader = new ShaderProgram(Gdx.files.absolute(e.getKey()), Gdx.files.absolute(e.getValue()));
+			ShaderProgram newShader = new ShaderProgram(this.resolver.resolve(e.getKey()), this.resolver.resolve(e.getValue()));
 			if(!newShader.isCompiled()){
 				System.err.println("Could not compile shader:\n "+newShader.getLog());
 				return;
@@ -232,5 +236,28 @@ public class ShaderManager implements Disposable{
 		FloatBuffer floats;
 		int type;
 	}
-
+	
+	static public final FileHandleResolver internalResolver = new InternalFileHandleResolver();
+	static public final FileHandleResolver externalResolver = new ExternalFileHandleResolver();
+	
+	static public final FileHandleResolver absoluteResolver = new FileHandleResolver(){
+		@Override
+		public FileHandle resolve(String fileName) {
+			return Gdx.files.absolute(fileName);
+		}
+	};
+	
+	static public final FileHandleResolver classpathResolver = new FileHandleResolver(){
+		@Override
+		public FileHandle resolve(String fileName) {
+			return Gdx.files.classpath(fileName);
+		}
+	};
+	
+	static public final FileHandleResolver localResolver = new FileHandleResolver(){
+		@Override
+		public FileHandle resolve(String fileName) {
+			return Gdx.files.local(fileName);
+		}
+	};
 }
